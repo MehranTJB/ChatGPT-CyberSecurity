@@ -1,0 +1,141 @@
+Name: Disk Structure Wipe
+Summary: Adversaries may corrupt or wipe the disk data structures on a hard drive necessary to boot a system; targeting specific critical systems or in large numbers in a network to interrupt availability to system and network resources. 
+
+Adversaries may attempt to render the system unable to boot by overwriting critical data located in structures such as the master boot record (MBR) or partition table.(Citation: Symantec Shamoon 2012)(Citation: FireEye Shamoon Nov 2016)(Citation: Palo Alto Shamoon Nov 2016)(Citation: Kaspersky StoneDrill 2017)(Citation: Unit 42 Shamoon3 2018) The data contained in disk structures may include the initial executable code for loading an operating system or the location of the file system partitions on disk. If this information is not present, the computer will not be able to load an operating system during the boot process, leaving the computer unavailable. [Disk Structure Wipe](https://attack.mitre.org/techniques/T1561/002) may be performed in isolation, or along with [Disk Content Wipe](https://attack.mitre.org/techniques/T1561/001) if all sectors of a disk are wiped.
+
+On a network devices, adversaries may reformat the file system using [Network Device CLI](https://attack.mitre.org/techniques/T1059/008) commands such as `format`.(Citation: format_cmd_cisco)
+
+To maximize impact on the target organization, malware designed for destroying disk structures may have worm-like features to propagate across a network by leveraging other techniques like [Valid Accounts](https://attack.mitre.org/techniques/T1078), [OS Credential Dumping](https://attack.mitre.org/techniques/T1003), and [SMB/Windows Admin Shares](https://attack.mitre.org/techniques/T1021/002).(Citation: Symantec Shamoon 2012)(Citation: FireEye Shamoon Nov 2016)(Citation: Palo Alto Shamoon Nov 2016)(Citation: Kaspersky StoneDrill 2017)
+Example Scenario and TTP Chain:### Example Scenario: Operation DarkWipe
+
+#### Background
+
+A cybercriminal group, known as "CyberVandals," has launched an operation targeting a multinational corporation with the goal of disrupting its operations and causing significant financial and reputational damage. The operation, dubbed "Operation DarkWipe," involves a sophisticated attack that culminates in the use of the Disk Structure Wipe technique to render critical systems inoperable.
+
+#### Initial Compromise and Establishment
+
+1. **Spear Phishing (T1566):** The attackers initiate their campaign by sending spear-phishing emails to employees of the targeted corporation. These emails contain malicious attachments that, once opened, execute a payload to establish a foothold on the employee's system.
+
+2. **Exploit Public-Facing Application (T1190):** Concurrently, the attackers exploit vulnerabilities in the corporation's public-facing applications to gain access to the corporate network.
+
+#### Privilege Escalation and Credential Access
+
+3. **Exploitation for Privilege Escalation (T1068):** Once inside the network, the attackers exploit vulnerabilities to escalate their privileges, allowing them to execute commands and access resources that are restricted to system administrators.
+
+4. **OS Credential Dumping (T1003):** With elevated privileges, the attackers dump credentials from the compromised systems, including passwords and hashes, to further their access within the network.
+
+#### Lateral Movement and Network Propagation
+
+5. **Valid Accounts (T1078):** Using the credentials obtained, the attackers leverage valid accounts to move laterally across the network, targeting critical systems and infrastructure.
+
+6. **SMB/Windows Admin Shares (T1021/002):** The attackers use SMB and Windows Admin Shares to propagate malware across the network, targeting systems that control critical operational processes.
+
+#### Execution of Disk Structure Wipe
+
+7. **Scripting (T1059):** The attackers deploy scripts on the targeted critical systems that invoke the Disk Structure Wipe technique. These scripts are designed to overwrite the master boot record (MBR) and partition tables, rendering the systems unable to boot.
+
+8. **Worm-like Propagation (Custom Technique):** The malware deployed by the attackers has worm-like features, allowing it to spread autonomously within the network to maximize impact.
+
+#### Impact and Objective
+
+- **Disk Structure Wipe (T1561/002):** The culmination of the attack sees the execution of the Disk Structure Wipe technique, resulting in numerous critical systems being rendered inoperable. The inability of these systems to boot disrupts the corporation's operations, causing significant financial loss and reputational damage.
+
+- **Network Device CLI (T1059/008):** In addition to targeting traditional computing systems, the attackers also execute commands to reformat the file systems on network devices, further crippling the organization's ability to recover from the attack.
+
+#### Conclusion
+
+Operation DarkWipe demonstrates a coordinated and multi-faceted attack that leverages a variety of TTPs to achieve its malicious objectives. By systematically escalating privileges, moving laterally across the network, and ultimately deploying a Disk Structure Wipe, the attackers cause widespread disruption and demonstrate the critical importance of robust cybersecurity defenses and incident response capabilities.
+==================================================
+Name: File System Permissions Weakness
+Summary: Processes may automatically execute specific binaries as part of their functionality or to perform other actions. If the permissions on the file system directory containing a target binary, or permissions on the binary itself, are improperly set, then the target binary may be overwritten with another binary using user-level permissions and executed by the original process. If the original process and thread are running under a higher permissions level, then the replaced binary will also execute under higher-level permissions, which could include SYSTEM.
+
+Adversaries may use this technique to replace legitimate binaries with malicious ones as a means of executing code at a higher permissions level. If the executing process is set to run at a specific time or during a certain event (e.g., system bootup) then this technique can also be used for persistence.
+
+### Services
+
+Manipulation of Windows service binaries is one variation of this technique. Adversaries may replace a legitimate service executable with their own executable to gain persistence and/or privilege escalation to the account context the service is set to execute under (local/domain account, SYSTEM, LocalService, or NetworkService). Once the service is started, either directly by the user (if appropriate access is available) or through some other means, such as a system restart if the service starts on bootup, the replaced executable will run instead of the original service executable.
+
+### Executable Installers
+
+Another variation of this technique can be performed by taking advantage of a weakness that is common in executable, self-extracting installers. During the installation process, it is common for installers to use a subdirectory within the <code>%TEMP%</code> directory to unpack binaries such as DLLs, EXEs, or other payloads. When installers create subdirectories and files they often do not set appropriate permissions to restrict write access, which allows for execution of untrusted code placed in the subdirectories or overwriting of binaries used in the installation process. This behavior is related to and may take advantage of [DLL Search Order Hijacking](https://attack.mitre.org/techniques/T1038). Some installers may also require elevated privileges that will result in privilege escalation when executing adversary controlled code. This behavior is related to [Bypass User Account Control](https://attack.mitre.org/techniques/T1088). Several examples of this weakness in existing common installers have been reported to software vendors. (Citation: Mozilla Firefox Installer DLL Hijack) (Citation: Seclists Kanthak 7zip Installer)
+Example Scenario and TTP Chain:### Example Scenario: Compromising a Corporate Network via Service Binary Replacement
+
+#### Initial Access
+An adversary targets a corporate network that is known to use a specific set of applications for daily operations, including a custom service for managing employee records. The adversary begins by conducting reconnaissance to identify vulnerabilities in the network's external defenses, using techniques like phishing emails to gain initial access to a low-level employee's workstation.
+
+#### Execution and Persistence
+After gaining initial access, the adversary escalates privileges by exploiting weak file system permissions on the employee's workstation. The adversary discovers that the custom employee management service installed on the network uses a service binary with improperly set file system permissions.
+
+1. **Discovery**: Using tools like `icacls` or `PowerShell`, the adversary checks the permissions of the directory containing the service binary and finds that any authenticated user can modify files in this directory.
+
+2. **Exploitation**: The adversary crafts a malicious executable designed to open a backdoor for further commands and exfiltrate sensitive data. This executable is named identically to the legitimate service binary.
+
+3. **File System Permissions Weakness Exploitation**: The adversary replaces the legitimate service binary with the crafted malicious executable. Due to the weak file system permissions, this replacement does not require elevated privileges.
+
+4. **Persistence**: Since the targeted service is configured to start automatically upon system boot, the adversary ensures that their malicious code will be executed with the same privileges as the original service, typically SYSTEM, every time the system restarts.
+
+#### Privilege Escalation and Lateral Movement
+The replaced service binary executes with SYSTEM privileges at the next system boot, providing the adversary with high-level access to the compromised machine. The adversary uses this foothold to perform lateral movement within the network, targeting other machines with similar vulnerabilities or using other techniques like Pass the Hash or exploiting other credential weaknesses to spread across the network.
+
+1. **Privilege Escalation**: The adversary leverages the SYSTEM-level access gained from the service binary replacement to disable security features, access sensitive files, and extract credentials stored on the compromised machine.
+
+2. **Lateral Movement**: With credentials and elevated privileges, the adversary moves laterally across the network, targeting critical servers such as domain controllers and database servers to gain access to valuable data and increase their foothold within the network.
+
+#### Defense Evasion and Credential Access
+Throughout this process, the adversary takes steps to avoid detection:
+
+- **Masquerading**: The malicious executable is designed to mimic the behavior of the legitimate service binary, sending normal-looking traffic and performing dummy operations to avoid raising suspicion.
+
+- **Obfuscation**: The adversary uses techniques to obfuscate their malicious payloads and commands to evade signature-based detection.
+
+- **Credential Dumping**: Using tools like Mimikatz, the adversary dumps credentials from the compromised system for further lateral movement and access to restricted areas of the network.
+
+### Conclusion
+In this scenario, the adversary successfully exploited the "File System Permissions Weakness" technique to replace a legitimate service binary with a malicious one, gaining persistence, privilege escalation, and extensive access to the corporate network. This emphasizes the importance of proper file system permissions and the need for regular audits and monitoring to detect and mitigate such threats.
+==================================================
+Name: Services Registry Permissions Weakness
+Summary: Adversaries may execute their own malicious payloads by hijacking the Registry entries used by services. Adversaries may use flaws in the permissions for Registry keys related to services to redirect from the originally specified executable to one that they control, in order to launch their own code when a service starts. Windows stores local service configuration information in the Registry under <code>HKLM\SYSTEM\CurrentControlSet\Services</code>. The information stored under a service's Registry keys can be manipulated to modify a service's execution parameters through tools such as the service controller, sc.exe,  [PowerShell](https://attack.mitre.org/techniques/T1059/001), or [Reg](https://attack.mitre.org/software/S0075). Access to Registry keys is controlled through access control lists and user permissions. (Citation: Registry Key Security)(Citation: malware_hides_service)
+
+If the permissions for users and groups are not properly set and allow access to the Registry keys for a service, adversaries may change the service's binPath/ImagePath to point to a different executable under their control. When the service starts or is restarted, then the adversary-controlled program will execute, allowing the adversary to establish persistence and/or privilege escalation to the account context the service is set to execute under (local/domain account, SYSTEM, LocalService, or NetworkService).
+
+Adversaries may also alter other Registry keys in the service’s Registry tree. For example, the <code>FailureCommand</code> key may be changed so that the service is executed in an elevated context anytime the service fails or is intentionally corrupted.(Citation: Kansa Service related collectors)(Citation: Tweet Registry Perms Weakness)
+
+The <code>Performance</code> key contains the name of a driver service's performance DLL and the names of several exported functions in the DLL.(Citation: microsoft_services_registry_tree) If the <code>Performance</code> key is not already present and if an adversary-controlled user has the <code>Create Subkey</code> permission, adversaries may create the <code>Performance</code> key in the service’s Registry tree to point to a malicious DLL.(Citation: insecure_reg_perms)
+
+Adversaries may also add the <code>Parameters</code> key, which stores driver-specific data, or other custom subkeys for their malicious services to establish persistence or enable other malicious activities.(Citation: microsoft_services_registry_tree)(Citation: troj_zegost) Additionally, If adversaries launch their malicious services using svchost.exe, the service’s file may be identified using <code>HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\servicename\Parameters\ServiceDll</code>.(Citation: malware_hides_service)
+Example Scenario and TTP Chain:### Example Scenario: Financial Institution Data Breach
+
+#### Background:
+
+A cybercriminal group targets a large financial institution aiming to steal sensitive customer data and financial records. The group plans to gain initial access through a phishing campaign, establish persistence in the network, escalate privileges, and then move laterally to access critical servers containing the targeted information. They decide to exploit the "Services Registry Permissions Weakness" as a part of their attack chain to maintain persistence and escalate privileges within the institution's network.
+
+#### Attack Chain:
+
+1. **Initial Access (T1566 Phishing):**
+   - The attackers launch a sophisticated phishing campaign targeting employees of the financial institution. They send emails that appear to be from the IT department, urging the employees to update their passwords due to a supposed security breach. The email contains a link to a malicious website that mimics the institution's internal password reset page.
+   - When employees attempt to reset their passwords, the attackers capture their credentials.
+
+2. **Execution (T1204 User Execution):**
+   - Using the obtained credentials, the attackers remotely log into the network, posing as legitimate employees. They execute a PowerShell script that downloads a backdoor onto the compromised system.
+
+3. **Persistence & Privilege Escalation (T1543.003 Services Registry Permissions Weakness):**
+   - The attackers identify a service on the compromised system that starts automatically but has weak Registry permissions.
+   - Using a PowerShell script, they modify the `HKLM\SYSTEM\CurrentControlSet\Services\<VulnerableService>\ImagePath` Registry key to point to their backdoor executable. This ensures their backdoor runs with the same privileges as the hijacked service, typically SYSTEM, upon system restart or service restart.
+   - Additionally, they alter the `FailureCommand` key to execute their malware in an elevated context if the service fails, further ensuring persistence and privilege escalation.
+
+4. **Lateral Movement (T1021 Remote Services):**
+   - With elevated privileges obtained through the hijacked service, the attackers use tools like PsExec to move laterally within the network, accessing other systems using the credentials harvested earlier or exploiting trust relationships between systems.
+
+5. **Collection (T1005 Data from Local System):**
+   - The attackers target servers containing sensitive customer data and financial records. They use their elevated privileges to bypass access controls and exfiltrate data to a server they control outside the institution's network.
+
+6. **Exfiltration (T1041 Exfiltration Over C2 Channel):**
+   - The stolen data is compressed and encrypted before being exfiltrated to avoid detection by network security devices. The attackers ensure that the exfiltration process mimics legitimate traffic patterns to blend in with normal network activity.
+
+7. **Command and Control (T1071 Application Layer Protocol):**
+   - Throughout the attack, the cybercriminals maintain communication with the compromised systems using HTTPS for command and control, making the malicious traffic harder to distinguish from legitimate traffic.
+
+#### Conclusion:
+
+In this scenario, the attackers successfully exploited the "Services Registry Permissions Weakness" to maintain persistence and escalate privileges within the network. This technique allowed them to remain undetected while they moved laterally, collected, and exfiltrated sensitive data, ultimately leading to a significant data breach at the financial institution.
+==================================================
